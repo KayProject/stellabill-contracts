@@ -38,7 +38,8 @@ pub use types::{
     EmergencyStopDisabledEvent, EmergencyStopEnabledEvent, Error, FundsDepositedEvent,
     LifetimeCapReachedEvent, MerchantWithdrawalEvent, MetadataDeletedEvent, MetadataSetEvent,
     MigrationExportEvent, NextChargeInfo, OneOffChargedEvent, OracleConfig, OraclePrice,
-    PartialRefundEvent, PlanTemplate, PlanTemplateUpdatedEvent, RecoveryEvent, RecoveryReason,
+    PartialRefundEvent, PlanTemplate, PlanTemplateUpdatedEvent, ProtocolFeeChargedEvent,
+    ProtocolFeeConfiguredEvent, RecoveryEvent, RecoveryReason,
     Subscription, SubscriptionCancelledEvent, SubscriptionChargedEvent, SubscriptionCreatedEvent,
     SubscriptionMigratedEvent, SubscriptionPausedEvent, SubscriptionResumedEvent,
     SubscriptionStatus, SubscriptionSummary, MAX_METADATA_KEYS, MAX_METADATA_KEY_LENGTH,
@@ -915,6 +916,30 @@ impl SubscriptionVault {
     /// List all metadata keys for a subscription.
     pub fn list_metadata_keys(env: Env, subscription_id: u32) -> Result<Vec<String>, Error> {
         metadata::do_list_metadata_keys(&env, subscription_id)
+    }
+
+    // ── Protocol Fees ──────────────────────────────────────────────────────────
+
+    /// Configure the protocol fee. Admin only.
+    ///
+    /// `fee_bps` is the percentage charged as a protocol fee in basis points
+    /// (`0..=10_000`). Setting `fee_bps` to `0` disables fee collection.
+    /// When enabled, each interval charge is split so that:
+    ///   `gross == merchant_net + treasury_fee`
+    ///
+    /// See `docs/protocol_fees.md` for full semantics.
+    pub fn set_protocol_fee(
+        env: Env,
+        admin: Address,
+        treasury: Address,
+        fee_bps: u32,
+    ) -> Result<(), Error> {
+        admin::set_protocol_fee(&env, admin, treasury, fee_bps)
+    }
+
+    /// Return the current protocol fee basis points (0 = disabled).
+    pub fn get_protocol_fee_bps(env: Env) -> u32 {
+        admin::get_protocol_fee_bps(&env)
     }
 
     // ── Blocklist ──────────────────────────────────────────────────────────────
